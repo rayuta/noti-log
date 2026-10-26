@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 실제 화면 테마는 Compose Material 3 에서 처리한다. 여기서는 시작 화면 배경만 지정한다. -->
+    <style name="Theme.NotificationLog" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>
