@@ -71,6 +71,18 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      # 실패 시 컴파일 오류 줄만 모아 실행 요약(Summary) 화면에 표시한다.
+      - name: Summarize errors (on failure)
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo '### Build errors'
+            echo '```'
+            grep -E '^e: |What went wrong|^> ' build-log.txt | grep -v '^> Task' | head -100 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload build logs (on failure)
         if: failure()
         uses: actions/upload-artifact@v5

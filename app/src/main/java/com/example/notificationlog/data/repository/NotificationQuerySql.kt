@@ -42,7 +42,7 @@ internal object NotificationQuerySql {
 
         if (query.packages.isNotEmpty()) {
             clauses += "packageName IN (${query.packages.joinToString(",") { "?" }})"
-            args += query.packages
+            args.addAll(query.packages)
         }
         query.fromMillis?.let { clauses += "postedAt >= ?"; args += it }
         query.toMillis?.let { clauses += "postedAt < ?"; args += it }
@@ -70,7 +70,7 @@ internal object NotificationQuerySql {
             }
             if (filter.targetPackages.isNotEmpty()) {
                 clauses += "packageName IN (${filter.targetPackages.joinToString(",") { "?" }})"
-                args += filter.targetPackages
+                args.addAll(filter.targetPackages)
             }
         }
 
