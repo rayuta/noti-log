@@ -22,20 +22,39 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
+      # 러너에 설치된 Android SDK 를 사용하고, 없으면 command-line tools 를 내려받아 설치한다.
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        shell: bash
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/android-sdk}}"
+          mkdir -p "$SDK"
+          SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | sort | tail -n 1 || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found in $SDK, installing command-line tools"
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+            rm -rf /tmp/cmdline-tools && unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+            mkdir -p "$SDK/cmdline-tools" && rm -rf "$SDK/cmdline-tools/latest"
+            mv /tmp/cmdline-tools/cmdline-tools "$SDK/cmdline-tools/latest"
+            SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "Using SDK: $SDK ($SDKMANAGER)"
+          yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses > /dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK" --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
       # Gradle 의존성/래퍼/빌드 캐시
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -46,7 +65,7 @@ jobs:
         run: ./gradlew assembleDebug --stacktrace --warning-mode all 2>&1 | tee build-log.txt
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -54,7 +73,7 @@ jobs:
 
       - name: Upload build logs (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-logs
           path: |
